@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Refleks // Reaksiyon Süresi Antrenörü</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root{
+  --bg:#0b0e0f; --panel:#14181a; --line:#242b2d;
+  --amber:#e8b23d; --green:#37d67a; --red:#e5484d; --ink:#e9ecec; --mute:#7b8688;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',sans-serif;}
+.num,.stat b,#zone .big{font-family:'IBM Plex Mono',monospace;}
+
+.wrap{max-width:760px;margin:0 auto;padding:6vh 6vw;min-height:100%;display:flex;flex-direction:column;gap:28px;}
+
+header{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+  padding:22px 26px;border:1px solid var(--line);background:
+    radial-gradient(circle at 85% 20%,rgba(229,72,77,.16),transparent 55%),
+    linear-gradient(135deg,#171b1c,#101314);
+  perspective:700px;position:relative;overflow:hidden;isolation:isolate;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);
+}
+header::before{
+  content:"";position:absolute;top:0;left:-40%;width:40%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(229,72,77,.16),transparent);
+  animation:sweep 4.5s ease-in-out infinite;pointer-events:none;
+}
+header::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 34px);
+}
+@keyframes sweep{
+  0%,100%{left:-40%;}
+  50%{left:110%;}
+}
+.hud-corner{position:absolute;width:16px;height:16px;border:2px solid var(--red);opacity:.7;}
+.hud-corner.tl{top:8px;left:8px;border-right:none;border-bottom:none;}
+.hud-corner.br{bottom:8px;right:24px;border-left:none;border-top:none;}
+
+header .titles{position:relative;z-index:1;}
+header .titles .live{display:inline-flex;align-items:center;gap:6px;color:var(--red);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;font-weight:600;}
+header .titles .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 rgba(229,72,77,.6);animation:pulse 1.6s ease-out infinite;}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(229,72,77,.55);}
+  70%{box-shadow:0 0 0 9px rgba(229,72,77,0);}
+  100%{box-shadow:0 0 0 0 rgba(229,72,77,0);}
+}
+header .titles h1{
+  font-size:1.5rem;font-weight:700;letter-spacing:.015em;
+  text-shadow:0 0 18px rgba(229,72,77,.35);
+  animation:glow 3s ease-in-out infinite;
+}
+@keyframes glow{
+  0%,100%{text-shadow:0 0 14px rgba(229,72,77,.25);}
+  50%{text-shadow:0 0 26px rgba(229,72,77,.55);}
+}
+header .titles p{color:var(--mute);font-size:.85rem;max-width:34ch;margin-top:6px;}
+
+.cube-cluster{display:flex;align-items:center;gap:22px;position:relative;z-index:1;}
+.cube-orbit{
+  width:96px;height:96px;position:relative;display:flex;align-items:center;justify-content:center;
+}
+.cube-orbit::before{
+  content:"";position:absolute;inset:0;border:1px dashed rgba(229,72,77,.4);border-radius:50%;
+  animation:orbit 5s linear infinite reverse;
+}
+@keyframes orbit{to{transform:rotate(360deg);}}
+.cube-mini{width:60px;height:60px;position:relative;transform-style:preserve-3d;animation:cubespin 6s linear infinite, bob 3s ease-in-out infinite;flex-shrink:0;}
+.cube-mini .f{
+  position:absolute;width:60px;height:60px;background:linear-gradient(135deg,#5a1218,#1a0506);
+  border:1px solid var(--red);box-shadow:inset 0 0 16px rgba(229,72,77,.5),0 0 24px rgba(229,72,77,.3);
+}
+.cube-mini .f1{transform:translateZ(30px);}
+.cube-mini .f2{transform:rotateY(180deg) translateZ(30px);}
+.cube-mini .f3{transform:rotateY(90deg) translateZ(30px);}
+.cube-mini .f4{transform:rotateY(-90deg) translateZ(30px);}
+.cube-mini .f5{transform:rotateX(90deg) translateZ(30px);}
+.cube-mini .f6{transform:rotateX(-90deg) translateZ(30px);}
+@keyframes cubespin{from{transform:rotateX(0) rotateY(0);}to{transform:rotateX(360deg) rotateY(360deg);}}
+@keyframes bob{0%,100%{margin-top:0;}50%{margin-top:-6px;}}
+@media (prefers-reduced-motion:reduce){.cube-mini{animation:none;} header::before{animation:none;} .cube-orbit::before{animation:none;} header .titles h1{animation:none;}}
+
+#zone{
+  height:min(58vh,420px);border:1px solid var(--line);position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  background:var(--panel);cursor:pointer;user-select:none;transition:background .12s ease;
+}
+#zone.wait{background:#2a1414;}
+#zone.go{background:#0e2a1c;}
+#zone.early{background:#3a1414;}
+#zone .msg{font-size:clamp(1.3rem,4vw,2rem);font-weight:600;}
+#zone .sub{color:var(--mute);font-size:.95rem;margin-top:10px;}
+#zone .big{font-size:clamp(2.6rem,9vw,4.5rem);font-weight:600;color:var(--green);}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);}
+.stat{background:var(--panel);padding:18px 16px;text-align:center;}
+.stat b{display:block;font-size:1.6rem;color:var(--amber);}
+.stat span{color:var(--mute);font-size:.8rem;}
+
+.history{border:1px solid var(--line);}
+.history h2{font-size:.95rem;font-weight:600;padding:14px 18px;border-bottom:1px solid var(--line);color:var(--mute);}
+.history ol{list-style:none;max-height:190px;overflow-y:auto;}
+.history li{
+  display:flex;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--line);font-size:.9rem;
+}
+.history li:last-child{border-bottom:none;}
+.history li span:first-child{color:var(--mute);}
+.history .val{font-family:'IBM Plex Mono',monospace;}
+.history .fault{color:var(--red);}
+
+.reset{
+  align-self:flex-start;background:none;border:1px solid var(--line);color:var(--mute);
+  padding:10px 18px;font-family:'Space Grotesk';font-size:.85rem;cursor:pointer;
+}
+.reset:hover{color:var(--ink);border-color:var(--mute);}
+
+@media (max-width:520px){ .stats{grid-template-columns:repeat(3,1fr);} .stat b{font-size:1.25rem;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="hud-corner tl"></span>
+    <span class="hud-corner br"></span>
+    <div class="titles">
+      <div class="live">Canlı Antrenman</div>
+      <h1>Refleks Antrenörü</h1>
+      <p>Kırmızıda bekle, yeşile döndüğü an tıkla. Erken tıklarsan tur iptal olur.</p>
+    </div>
+    <div class="cube-cluster">
+      <div class="cube-orbit">
+        <div class="cube-mini">
+          <div class="f f1"></div>
+          <div class="f f2"></div>
+          <div class="f f3"></div>
+          <div class="f f4"></div>
+          <div class="f f5"></div>
+          <div class="f f6"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="zone" class="wait">
+    <div>
+      <div class="msg" id="msg">Başlamak için tıkla</div>
+      <div class="sub" id="sub">5 tur boyunca reaksiyon sürenizi ölçeriz</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="lastVal">—</b><span>Son</span></div>
+    <div class="stat"><b id="bestVal">—</b><span>En iyi</span></div>
+    <div class="stat"><b id="avgVal">—</b><span>Ortalama</span></div>
+  </div>
+
+  <div class="history">
+    <h2>Geçmiş</h2>
+    <ol id="historyList"></ol>
+  </div>
+
+  <button class="reset" id="resetBtn">Geçmişi Temizle</button>
+</div>
+
+<script>
+const zone = document.getElementById('zone');
+const msg = document.getElementById('msg');
+const sub = document.getElementById('sub');
+const historyList = document.getElementById('historyList');
+const lastVal = document.getElementById('lastVal');
+const bestVal = document.getElementById('bestVal');
+const avgVal = document.getElementById('avgVal');
+const resetBtn = document.getElementById('resetBtn');
+
+let state = 'idle'; // idle | waiting | ready | earlyflash
+let timer = null;
+let goAt = 0;
+let results = [];
+
+function setZone(cls, m, s, big){
+  zone.className = cls;
+  msg.textContent = m;
+  msg.classList.toggle('big', !!big);
+  sub.textContent = s || '';
+}
+
+function renderStats(){
+  const nums = results.filter(r => r.ok).map(r => r.ms);
+  lastVal.textContent = nums.length ? nums[nums.length-1] + ' ms' : '—';
+  bestVal.textContent = nums.length ? Math.min(...nums) + ' ms' : '—';
+  avgVal.textContent = nums.length ? Math.round(nums.reduce((a,b)=>a+b,0)/nums.length) + ' ms' : '—';
+  historyList.innerHTML = results.slice().reverse().map((r,i) => {
+    const n = results.length - i;
+    return r.ok
+      ? `<li><span>Tur ${n}</span><span class="val">${r.ms} ms</span></li>`
+      : `<li><span>Tur ${n}</span><span class="val fault">Erken</span></li>`;
+  }).join('');
+}
+
+function startRound(){
+  state = 'waiting';
+  setZone('wait', 'Bekle...', 'Kırmızı — henüz tıklama, yeşili bekle');
+  const delay = 1000 + Math.random()*2200;
+  timer = setTimeout(() => {
+    state = 'ready';
+    goAt = performance.now();
+    setZone('go', 'TIKLA', 'Yeşil — şimdi tıkla!', true);
+  }, delay);
+}
+
+zone.addEventListener('click', () => {
+  if(state === 'idle'){
+    startRound();
+    return;
+  }
+  if(state === 'waiting'){
+    clearTimeout(timer);
+    results.push({ok:false});
+    renderStats();
+    state = 'earlyagain';
+    setZone('early', 'Çok erken!', 'Kırmızıydı. Devam etmek için tıkla');
+    return;
+  }
+  if(state === 'earlyagain'){
+    startRound();
+    return;
+  }
+  if(state === 'ready'){
+    const ms = Math.round(performance.now() - goAt);
+    results.push({ok:true, ms});
+    renderStats();
+    state = 'result';
+    setZone('go', ms + ' ms', 'Tekrar denemek için tıkla', true);
+    return;
+  }
+  if(state === 'result'){
+    startRound();
+    return;
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  results = [];
+  renderStats();
+  state = 'idle';
+  clearTimeout(timer);
+  setZone('wait', 'Başlamak için tıkla', '5 tur boyunca reaksiyon sürenizi ölçeriz');
+});
+
+renderStats();
+</script>
+</body>
+</html>
